@@ -1,0 +1,3 @@
+[submodule "course-content-submodule"]
+	path = course-content-submodule
+	url = https://github.com/udacity/cd13387-secure-coding.git
