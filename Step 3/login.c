@@ -5,7 +5,7 @@
 
 #define MAX_LINE_LENGTH 200
 #define MAX_USERNAME_LENGTH 50
-#define MAX_PASSWORD_LENGTH 50
+#define MAX_PASSWORD_LENGTH 100 //buffer overflow
 #define MAX_COMMAND_LENGTH 50
 #define SALT_LENGTH 2
 #define MAX_HASH_LENGTH 65
@@ -25,9 +25,6 @@ int check_login(const char* username, const char* password) {
     //if (strcmp(username, "superuser") == 0 && strcmp(password, "h4rdc0d3d") == 0) {
     //    return 1;
     //}
-
-    printf("Checking login for user: %s\n", username);
-    printf("Password: %s\n", password);
 
     FILE* file = fopen(FILE_USERS, "r");
     if (file == NULL) {
@@ -50,7 +47,8 @@ int check_login(const char* username, const char* password) {
             strcpy(file_username, token);
             token = strtok(NULL, ":");
             if (token != NULL) {
-                strcpy(file_salt, token);
+                strncpy(file_salt, token, SALT_LENGTH * 2 + 1);
+                printf("Salt: %s\n", file_salt);
                 token = strtok(NULL, ":");
                 if (token != NULL) {
                     strcpy(file_password, token);
@@ -61,8 +59,15 @@ int check_login(const char* username, const char* password) {
         // Convert the salt from hex to bytes
         unsigned char salt[SALT_LENGTH];
         for (int i = 0; i < SALT_LENGTH; i++) {
-            sscanf(file_salt + (i * 2), "%2hhx", &salt[i]);
+            if (sscanf(file_salt + (i * 2), "%2hhx", &salt[i]) != 1) {
+                printf("Error: Failed to parse salt byte %d from file_salt '%s'\n", i, file_salt);
+                fclose(file);
+                return 0; // Exit if conversion fails
+            }
         }
+
+        // Print the salt in bytes
+        printf("scanned Salt in hex: %02x %02x\n", salt[0], salt[1]);
 
         // Hash the entered password with the salt from the file
         char hashed_password[MAX_HASH_LENGTH];
